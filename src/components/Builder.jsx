@@ -10,6 +10,7 @@ import {
   PiRectangle,
   PiCircle,
   PiSquare,
+  PiFireDuotone,
 } from "react-icons/pi";
 import TextBlock from "./TextBlock";
 import GraphBlock from "./GraphBlock";
@@ -18,6 +19,7 @@ import TableBlock from "./TableBlock";
 import ShapeBlock from "./ShapeBlock";
 import ImageBlock from "./ImageBlock";
 import StickNoteBlock from "./StickNoteBlock";
+import AvatarBlock from "./AvatarBlock"; // Add this import
 
 const Builder = () => {
   // Shape dropdown
@@ -127,7 +129,31 @@ const Builder = () => {
     );
   }, []);
 
-  // Update the removeBlock function to include note blocks
+  // Add this new state for avatar blocks
+  const [avatarBlocks, setAvatarBlocks] = useState([]);
+
+  // Add this new function to create an avatar block
+  const addAvatarBlock = useCallback(() => {
+    setAvatarBlocks((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        x: 0,
+        y: 0,
+        avatarUrl: "https://api.dicebear.com/6.x/avataaars/svg",
+      },
+    ]);
+    handleBlockClick("avatar");
+  }, [handleBlockClick]);
+
+  // Add this new function to update avatar position
+  const updateAvatarPosition = useCallback((id, x, y) => {
+    setAvatarBlocks((prev) =>
+      prev.map((block) => (block.id === id ? { ...block, x, y } : block))
+    );
+  }, []);
+
+  // Update the removeBlock function to include avatar blocks
   const removeBlock = useCallback((blockType, blockId) => {
     switch (blockType) {
       case "text":
@@ -147,6 +173,9 @@ const Builder = () => {
         break;
       case "note":
         setNoteBlocks((prev) => prev.filter((block) => block.id !== blockId));
+        break;
+      case "avatar":
+        setAvatarBlocks((prev) => prev.filter((block) => block.id !== blockId));
         break;
       default:
         console.warn(`Unknown block type: ${blockType}`);
@@ -243,6 +272,16 @@ const Builder = () => {
               <PiTable className="h-5 w-5" />
             </button>
           </li>
+
+          <li>
+            <button
+              className="tooltip tooltip-right"
+              data-tip="Add Avatar"
+              onClick={addAvatarBlock}
+            >
+              <PiFireDuotone className="h-5 w-5" />
+            </button>
+          </li>
         </ul>
       </div>
       <div
@@ -269,6 +308,7 @@ const Builder = () => {
             updatePosition={updateGraphPosition}
             setSelectedBlockId={setSelectedBlockId}
             onClick={() => handleBlockClick("graph")}
+            isSelected={selectedBlockId === block.id}
           />
         ))}
         {tableBlocks.map((block) => (
@@ -316,6 +356,18 @@ const Builder = () => {
             updatePosition={updateNotePosition}
             setSelectedBlockId={setSelectedBlockId}
             onClick={() => handleBlockClick("note")}
+          />
+        ))}
+        {avatarBlocks.map((block) => (
+          <AvatarBlock
+            key={block.id}
+            id={block.id}
+            x={block.x}
+            y={block.y}
+            avatarUrl={block.avatarUrl}
+            updatePosition={updateAvatarPosition}
+            setSelectedBlockId={setSelectedBlockId}
+            onClick={() => handleBlockClick("avatar")}
           />
         ))}
       </div>

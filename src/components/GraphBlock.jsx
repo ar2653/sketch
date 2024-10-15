@@ -3,6 +3,10 @@ import { Rnd } from "react-rnd";
 import {
   LineChart,
   Line,
+  PieChart,
+  Pie,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -13,21 +17,82 @@ import {
 import "../App.css";
 import PropTypes from "prop-types";
 
-const data = [
-  { name: "Jan", value: 400 },
-  { name: "Feb", value: 300 },
-  { name: "Mar", value: 600 },
-  { name: "Apr", value: 800 },
-  { name: "May", value: 500 },
-  { name: "Jun", value: 700 },
-];
-
-const GraphBlock = ({ id, x, y, updatePosition, setSelectedBlockId }) => {
+const GraphBlock = ({
+  id,
+  x,
+  y,
+  updatePosition,
+  setSelectedBlockId,
+  isSelected,
+}) => {
   const [size, setSize] = useState({ width: 400, height: 300 });
+  const [graphType, setGraphType] = useState("line");
+  const [data, setData] = useState([
+    { name: "Jan", value: 400 },
+    { name: "Feb", value: 300 },
+    { name: "Mar", value: 600 },
+  ]);
 
   const handleBlockClick = (e) => {
     e.stopPropagation();
     setSelectedBlockId(id);
+  };
+
+  const generateRandomData = () => {
+    const newData = Array.from({ length: 5 }, (_, i) => ({
+      name: `Item ${i + 1}`,
+      value: Math.floor(Math.random() * 1000),
+    }));
+    setData(newData);
+  };
+
+  const addCustomData = () => {
+    const name = prompt("Enter data name:");
+    const value = parseInt(prompt("Enter data value:"));
+    if (name && !isNaN(value)) {
+      setData([...data, { name, value }]);
+    }
+  };
+
+  const renderGraph = () => {
+    switch (graphType) {
+      case "line":
+        return (
+          <LineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke="#8884d8"
+              strokeWidth={2}
+            />
+          </LineChart>
+        );
+      case "pie":
+        return (
+          <PieChart>
+            <Pie dataKey="value" data={data} fill="#8884d8" label />
+            <Tooltip />
+          </PieChart>
+        );
+      case "bar":
+        return (
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="value" fill="#8884d8" />
+          </BarChart>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -51,22 +116,35 @@ const GraphBlock = ({ id, x, y, updatePosition, setSelectedBlockId }) => {
       bounds="parent"
       onClick={handleBlockClick}
     >
-      <div className="bg-white p-4 rounded-lg shadow-lg h-full">
+      <div className="bg-white p-4 rounded-lg shadow-lg h-full flex flex-col">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Line
-              type="monotone"
-              dataKey="value"
-              stroke="#8884d8"
-              strokeWidth={2}
-            />
-          </LineChart>
+          {renderGraph()}
         </ResponsiveContainer>
+        {isSelected && (
+          <div className="mt-4 flex justify-between items-center">
+            <select
+              value={graphType}
+              onChange={(e) => setGraphType(e.target.value)}
+              className="p-2 border rounded"
+            >
+              <option value="line">Line</option>
+              <option value="pie">Pie</option>
+              <option value="bar">Bar</option>
+            </select>
+            <button
+              onClick={addCustomData}
+              className="p-2 bg-blue-500 text-white rounded"
+            >
+              Add Data
+            </button>
+            <button
+              onClick={generateRandomData}
+              className="p-2 bg-green-500 text-white rounded"
+            >
+              Random Data
+            </button>
+          </div>
+        )}
       </div>
     </Rnd>
   );
@@ -78,6 +156,7 @@ GraphBlock.propTypes = {
   y: PropTypes.number.isRequired,
   updatePosition: PropTypes.func.isRequired,
   setSelectedBlockId: PropTypes.func.isRequired,
+  isSelected: PropTypes.bool.isRequired,
 };
 
 export default GraphBlock;
