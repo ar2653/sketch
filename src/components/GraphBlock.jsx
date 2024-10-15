@@ -13,9 +13,11 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  Cell,
 } from "recharts";
 import "../App.css";
 import PropTypes from "prop-types";
+import { PiGear } from "react-icons/pi";
 
 const GraphBlock = ({
   id,
@@ -23,7 +25,7 @@ const GraphBlock = ({
   y,
   updatePosition,
   setSelectedBlockId,
-  isSelected,
+  setConfigDrawer,
 }) => {
   const [size, setSize] = useState({ width: 400, height: 300 });
   const [graphType, setGraphType] = useState("line");
@@ -38,20 +40,32 @@ const GraphBlock = ({
     setSelectedBlockId(id);
   };
 
-  const generateRandomData = () => {
-    const newData = Array.from({ length: 5 }, (_, i) => ({
-      name: `Item ${i + 1}`,
-      value: Math.floor(Math.random() * 1000),
-    }));
-    setData(newData);
+  const handleConfigClick = (e) => {
+    e.stopPropagation();
+    setSelectedBlockId(id);
+    setConfigDrawer({
+      open: true,
+      id: id,
+      type: "graph",
+      config: {
+        graphType,
+        setGraphType: (newType) => setGraphType(newType),
+        data,
+        setData: (newData) => setData(newData),
+      },
+    });
+    // Ensure the drawer is opened
+    const drawerCheckbox = document.getElementById("config-drawer");
+    if (drawerCheckbox) {
+      drawerCheckbox.checked = true;
+    }
   };
 
-  const addCustomData = () => {
-    const name = prompt("Enter data name:");
-    const value = parseInt(prompt("Enter data value:"));
-    if (name && !isNaN(value)) {
-      setData([...data, { name, value }]);
-    }
+  // Add this new constant for color schemes
+  const colorSchemes = {
+    line: ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#0088FE"],
+    pie: ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#0088FE"],
+    bar: ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#0088FE"],
   };
 
   const renderGraph = () => {
@@ -64,19 +78,32 @@ const GraphBlock = ({
             <YAxis />
             <Tooltip />
             <Legend />
-            <Line
-              type="monotone"
-              dataKey="value"
-              stroke="#8884d8"
-              strokeWidth={2}
-            />
+            {Object.keys(data[0])
+              .filter((key) => key !== "name")
+              .map((key, index) => (
+                <Line
+                  key={key}
+                  type="monotone"
+                  dataKey={key}
+                  stroke={colorSchemes.line[index % colorSchemes.line.length]}
+                  strokeWidth={2}
+                />
+              ))}
           </LineChart>
         );
       case "pie":
         return (
           <PieChart>
-            <Pie dataKey="value" data={data} fill="#8884d8" label />
+            <Pie dataKey="value" data={data} fill="#8884d8" label>
+              {data.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={colorSchemes.pie[index % colorSchemes.pie.length]}
+                />
+              ))}
+            </Pie>
             <Tooltip />
+            <Legend />
           </PieChart>
         );
       case "bar":
@@ -87,7 +114,15 @@ const GraphBlock = ({
             <YAxis />
             <Tooltip />
             <Legend />
-            <Bar dataKey="value" fill="#8884d8" />
+            {Object.keys(data[0])
+              .filter((key) => key !== "name")
+              .map((key, index) => (
+                <Bar
+                  key={key}
+                  dataKey={key}
+                  fill={colorSchemes.bar[index % colorSchemes.bar.length]}
+                />
+              ))}
           </BarChart>
         );
       default:
@@ -116,35 +151,20 @@ const GraphBlock = ({
       bounds="parent"
       onClick={handleBlockClick}
     >
-      <div className="bg-white p-4 rounded-lg shadow-lg h-full flex flex-col">
-        <ResponsiveContainer width="100%" height="100%">
-          {renderGraph()}
-        </ResponsiveContainer>
-        {isSelected && (
-          <div className="mt-4 flex justify-between items-center">
-            <select
-              value={graphType}
-              onChange={(e) => setGraphType(e.target.value)}
-              className="p-2 border rounded"
-            >
-              <option value="line">Line</option>
-              <option value="pie">Pie</option>
-              <option value="bar">Bar</option>
-            </select>
-            <button
-              onClick={addCustomData}
-              className="p-2 bg-blue-500 text-white rounded"
-            >
-              Add Data
-            </button>
-            <button
-              onClick={generateRandomData}
-              className="p-2 bg-green-500 text-white rounded"
-            >
-              Random Data
-            </button>
+      <div className="bg-white rounded-lg border border-gray-200 shadow-lg h-full flex flex-col relative group overflow-hidden">
+        <div className="flex-grow p-4">
+          <ResponsiveContainer width="100%" height="100%">
+            {renderGraph()}
+          </ResponsiveContainer>
+        </div>
+        <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="tooltip tooltip-left" data-tip="Configure">
+            <PiGear
+              onClick={handleConfigClick}
+              className="text-2xl text-gray-600 hover:text-gray-800 focus:outline-none cursor-pointer bg-white rounded-full p-1 shadow-md"
+            />
           </div>
-        )}
+        </div>
       </div>
     </Rnd>
   );
@@ -157,6 +177,7 @@ GraphBlock.propTypes = {
   updatePosition: PropTypes.func.isRequired,
   setSelectedBlockId: PropTypes.func.isRequired,
   isSelected: PropTypes.bool.isRequired,
+  setConfigDrawer: PropTypes.func.isRequired,
 };
 
 export default GraphBlock;

@@ -3,15 +3,7 @@ import PropTypes from "prop-types";
 import { Rnd } from "react-rnd";
 import { PiCheckCircle, PiXCircle } from "react-icons/pi";
 
-const ImageBlock = ({
-  id,
-  x,
-  y,
-  src,
-  updatePosition,
-  setSelectedBlockId,
-  onClick,
-}) => {
+const ImageBlock = ({ id, x, y, src, updatePosition, setSelectedBlockId }) => {
   const [imageUrl, setImageUrl] = useState(src);
   const [showInput, setShowInput] = useState(true);
   const [size, setSize] = useState({ width: 200, height: 150 });
@@ -50,7 +42,6 @@ const ImageBlock = ({
       onDragStop={handleDragStop}
       onResize={handleResize}
       onMouseDown={() => setSelectedBlockId(id)}
-      onClick={onClick}
       bounds="parent"
       dragHandleClassName="drag-handle"
     >

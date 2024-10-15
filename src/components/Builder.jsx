@@ -10,7 +10,7 @@ import {
   PiRectangle,
   PiCircle,
   PiSquare,
-  PiFireDuotone,
+  PiUserCircle,
 } from "react-icons/pi";
 import TextBlock from "./TextBlock";
 import GraphBlock from "./GraphBlock";
@@ -19,20 +19,33 @@ import TableBlock from "./TableBlock";
 import ShapeBlock from "./ShapeBlock";
 import ImageBlock from "./ImageBlock";
 import StickNoteBlock from "./StickNoteBlock";
-import AvatarBlock from "./AvatarBlock"; // Add this import
+import AvatarBlock from "./AvatarBlock";
+import ConfigDrawer from "./ConfigDrawer";
+import useTextBlocks from "../hooks/useTextBlocks";
+import useTableBlocks from "../hooks/useTableBlocks";
 
 const Builder = () => {
+  // Text Block Hook
+  const { textBlocks, addTextBlock, updatePosition, removeTextBlock } =
+    useTextBlocks();
+
+  // Table Block Hook
+  const { tableBlocks, addTableBlock, updateTablePosition, removeTableBlock } =
+    useTableBlocks();
+
   // Shape dropdown
   const [showShapeDropdown, setShowShapeDropdown] = useState(false);
   // Bottom Navigation block details
   const [selectedBlock, setSelectedBlock] = useState(null);
   const [selectedBlockId, setSelectedBlockId] = useState(null);
 
-  // Show and Hide Shape Dropdown
-  const toggleShapeDropdown = useCallback((e) => {
-    e.stopPropagation();
-    setShowShapeDropdown((prev) => !prev);
-  }, []);
+  // Add this new state for the ConfigDrawer
+  const [configDrawer, setConfigDrawer] = useState({
+    open: false,
+    id: null,
+    type: null,
+    config: null,
+  });
 
   // Handle Block Click for Bottom Navigation
   const handleBlockClick = useCallback((blockType) => {
@@ -40,40 +53,38 @@ const Builder = () => {
     setSelectedBlock(blockType);
   }, []);
 
+  // Add Text Block
+  const handleAddTextBlock = useCallback(() => {
+    addTextBlock();
+    handleBlockClick("text");
+  }, [addTextBlock, handleBlockClick]);
+
+  // Add Table Block
+  const handleAddTableBlock = useCallback(() => {
+    addTableBlock();
+    handleBlockClick("table");
+  }, [addTableBlock, handleBlockClick]);
+
+  // Show and Hide Shape Dropdown
+  const toggleShapeDropdown = useCallback((e) => {
+    e.stopPropagation();
+    setShowShapeDropdown((prev) => !prev);
+  }, []);
+
   useEffect(() => {
     console.log("Selected block updated:", selectedBlock);
   }, [selectedBlock]);
-  // text block
-  const [textBlocks, setTextBlocks] = useState([]);
-  const addTextBlock = useCallback(() => {
-    setTextBlocks((prev) => [...prev, { id: Date.now(), x: 0, y: 0 }]);
-    handleBlockClick("text");
-  }, [handleBlockClick]);
-
-  const updatePosition = useCallback((id, x, y) => {
-    setTextBlocks((prev) =>
-      prev.map((block) => (block.id === id ? { ...block, x, y } : block))
-    );
-  }, []);
 
   const [graphBlocks, setGraphBlocks] = useState([]);
   const addGraphBlock = useCallback(() => {
-    setGraphBlocks((prev) => [...prev, { id: Date.now(), x: 0, y: 0 }]);
+    const newId = Date.now().toString(); // Convert to string
+    setGraphBlocks((prev) => [...prev, { id: newId, x: 0, y: 0 }]);
     handleBlockClick("graph");
+    setSelectedBlockId(newId);
+    setConfigDrawer({ open: true, id: newId });
   }, [handleBlockClick]);
   const updateGraphPosition = useCallback((id, x, y) => {
     setGraphBlocks((prev) =>
-      prev.map((block) => (block.id === id ? { ...block, x, y } : block))
-    );
-  }, []);
-
-  const [tableBlocks, setTableBlocks] = useState([]);
-  const addTableBlock = useCallback(() => {
-    setTableBlocks((prev) => [...prev, { id: Date.now(), x: 0, y: 0 }]);
-    handleBlockClick("table");
-  }, [handleBlockClick]);
-  const updateTablePosition = useCallback((id, x, y) => {
-    setTableBlocks((prev) =>
       prev.map((block) => (block.id === id ? { ...block, x, y } : block))
     );
   }, []);
@@ -153,35 +164,50 @@ const Builder = () => {
     );
   }, []);
 
-  // Update the removeBlock function to include avatar blocks
-  const removeBlock = useCallback((blockType, blockId) => {
-    switch (blockType) {
-      case "text":
-        setTextBlocks((prev) => prev.filter((block) => block.id !== blockId));
-        break;
-      case "graph":
-        setGraphBlocks((prev) => prev.filter((block) => block.id !== blockId));
-        break;
-      case "table":
-        setTableBlocks((prev) => prev.filter((block) => block.id !== blockId));
-        break;
-      case "shape":
-        setShapeBlocks((prev) => prev.filter((block) => block.id !== blockId));
-        break;
-      case "image":
-        setImageBlocks((prev) => prev.filter((block) => block.id !== blockId));
-        break;
-      case "note":
-        setNoteBlocks((prev) => prev.filter((block) => block.id !== blockId));
-        break;
-      case "avatar":
-        setAvatarBlocks((prev) => prev.filter((block) => block.id !== blockId));
-        break;
-      default:
-        console.warn(`Unknown block type: ${blockType}`);
-    }
-    setSelectedBlock(null);
-    setSelectedBlockId(null);
+  // Update the removeBlock function
+  const removeBlock = useCallback(
+    (blockType, blockId) => {
+      switch (blockType) {
+        case "text":
+          removeTextBlock(blockId);
+          break;
+        case "graph":
+          setGraphBlocks((prev) =>
+            prev.filter((block) => block.id !== blockId)
+          );
+          break;
+        case "table":
+          removeTableBlock(blockId);
+          break;
+        case "shape":
+          setShapeBlocks((prev) =>
+            prev.filter((block) => block.id !== blockId)
+          );
+          break;
+        case "image":
+          setImageBlocks((prev) =>
+            prev.filter((block) => block.id !== blockId)
+          );
+          break;
+        case "note":
+          setNoteBlocks((prev) => prev.filter((block) => block.id !== blockId));
+          break;
+        case "avatar":
+          setAvatarBlocks((prev) =>
+            prev.filter((block) => block.id !== blockId)
+          );
+          break;
+        default:
+          console.warn(`Unknown block type: ${blockType}`);
+      }
+      setSelectedBlock(null);
+      setSelectedBlockId(null);
+    },
+    [removeTextBlock, removeTableBlock]
+  );
+
+  const handleConfigClose = useCallback(() => {
+    setConfigDrawer((prev) => ({ ...prev, open: false }));
   }, []);
 
   return (
@@ -192,7 +218,7 @@ const Builder = () => {
             <button
               className="tooltip tooltip-right"
               data-tip="Add Text"
-              onClick={addTextBlock}
+              onClick={handleAddTextBlock}
             >
               <PiTextAa className="h-5 w-5" />
             </button>
@@ -267,7 +293,7 @@ const Builder = () => {
             <button
               className="tooltip tooltip-right"
               data-tip="Add Table"
-              onClick={addTableBlock}
+              onClick={handleAddTableBlock}
             >
               <PiTable className="h-5 w-5" />
             </button>
@@ -279,7 +305,7 @@ const Builder = () => {
               data-tip="Add Avatar"
               onClick={addAvatarBlock}
             >
-              <PiFireDuotone className="h-5 w-5" />
+              <PiUserCircle className="h-5 w-5" />
             </button>
           </li>
         </ul>
@@ -309,6 +335,7 @@ const Builder = () => {
             setSelectedBlockId={setSelectedBlockId}
             onClick={() => handleBlockClick("graph")}
             isSelected={selectedBlockId === block.id}
+            setConfigDrawer={setConfigDrawer}
           />
         ))}
         {tableBlocks.map((block) => (
@@ -375,6 +402,13 @@ const Builder = () => {
         selectedBlock={selectedBlock}
         selectedBlockId={selectedBlockId}
         removeBlock={removeBlock}
+      />
+      <ConfigDrawer
+        id={configDrawer.id}
+        type={configDrawer.type}
+        config={configDrawer.config}
+        isOpen={configDrawer.open}
+        onClose={handleConfigClose}
       />
     </>
   );

@@ -87,7 +87,7 @@ const BottomNavigation = ({ selectedBlock, selectedBlockId, removeBlock }) => {
 
 BottomNavigation.propTypes = {
   selectedBlock: PropTypes.string,
-  selectedBlockId: PropTypes.number,
+  selectedBlockId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   removeBlock: PropTypes.func.isRequired,
 };
 
